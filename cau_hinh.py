@@ -25,6 +25,8 @@ TOC_DO_DAN_KE_THU = 300
 TOC_DO_KE_THU = 80             # px/giây
 KHOANG_BAN_KE_THU_TOI_THIEU = 1.2
 KHOANG_BAN_KE_THU_TOI_DA = 3.0
+# Tỷ lệ scale mặc định cho sprite kẻ thù (1.0 = nguyên bản, <1 nhỏ hơn)
+ENEMY_SCALE = 0.6
 
 # Alias giữ tương thích với mã hiện tại (tiếng Anh)
 WIDTH = RONG
@@ -46,3 +48,5 @@ ENEMY_BULLET_SPEED = TOC_DO_DAN_KE_THU
 ENEMY_SPEED = TOC_DO_KE_THU
 ENEMY_SHOOT_INTERVAL_MIN = KHOANG_BAN_KE_THU_TOI_THIEU
 ENEMY_SHOOT_INTERVAL_MAX = KHOANG_BAN_KE_THU_TOI_DA
+# Export alias
+ENEMY_SPRITE_SCALE = ENEMY_SCALE
