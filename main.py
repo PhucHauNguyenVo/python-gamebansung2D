@@ -3,6 +3,7 @@ import pygame, random, sys
 from cau_hinh import RONG, CAO, SO_KHUNG_HINH, KHOANG_SINH_KE_THU
 from nguoi_choi import NguoiChoi
 from ke_thu import Enemy
+from boss import Boss
 from ui import ve_ui
 from menu_game import MenuTroChoi
 
@@ -22,9 +23,11 @@ nhom_dan = pygame.sprite.Group()
 
 nguoi_choi = None
 dem_sinh_ke = 0.0
+elapsed_time = 0.0  # Tổng thời gian chơi (giây)
+boss_spawned = False
 
 def bat_dau_vong_moi():
-    global tat_ca_sprite, nhom_ke_thu, nhom_dan, nguoi_choi, dem_sinh_ke
+    global tat_ca_sprite, nhom_ke_thu, nhom_dan, nguoi_choi, dem_sinh_ke, elapsed_time, boss_spawned
     tat_ca_sprite.empty(); nhom_ke_thu.empty(); nhom_dan.empty()
     nguoi_choi = NguoiChoi((RONG // 2, CAO // 2), tat_ca_sprite, nhom_dan)
     tat_ca_sprite.add(nguoi_choi)
@@ -36,6 +39,9 @@ def bat_dau_vong_moi():
         nhom_ke_thu.add(ke_thu); tat_ca_sprite.add(ke_thu)
 
     dem_sinh_ke = 0.0
+    # Reset boss timer/state for new round
+    elapsed_time = 0.0
+    boss_spawned = False
 
 # Khởi đầu ở menu
 menu_tro_choi.state = "menu"
@@ -101,9 +107,18 @@ while dang_chay:
         # Va chạm: đạn người chơi -> kẻ thù, đạn kẻ thù -> người chơi
         for vien_dan in list(nhom_dan):
             if getattr(vien_dan, 'chu_so_huu', None) == 'player':
-                trung = pygame.sprite.spritecollide(vien_dan, nhom_ke_thu, True)
-                if trung:
-                    vien_dan.kill()
+                    # Đạn của player trúng kẻ thù. Nhưng boss khó chết: không xóa trực tiếp tất cả kẻ thù
+                    danh_trung = pygame.sprite.spritecollide(vien_dan, nhom_ke_thu, False)
+                    for t in danh_trung:
+                        # Nếu là Boss thì trừ HP; nếu là enemy thường thì kill
+                        if hasattr(t, 'take_damage') and getattr(t, 'hp', None) is not None:
+                            t.take_damage(1)
+                            if getattr(t, 'hp', 1) <= 0:
+                                t.kill()
+                        else:
+                            t.kill()
+                        vien_dan.kill()
+                        break
             else:
                 if nguoi_choi and vien_dan.rect.colliderect(nguoi_choi.rect):
                     vien_dan.kill()
@@ -112,17 +127,31 @@ while dang_chay:
                         menu_tro_choi.state = "gameover"
 
         # Va chạm: kẻ thù chạm người chơi
-        danh_sach = pygame.sprite.spritecollide(nguoi_choi, nhom_ke_thu, True)
-        if danh_sach:
-            for _ in danh_sach:
-                nguoi_choi.nhan_sat_thuong(1)
-            if nguoi_choi.hp <= 0:
-                menu_tro_choi.state = "gameover"
+            # Khi kẻ thù chạm vào người chơi: nếu là boss, trừ máu boss nhưng boss không tự chết do va chạm
+            danh_sach = pygame.sprite.spritecollide(nguoi_choi, nhom_ke_thu, False)
+            if danh_sach:
+                for t in danh_sach:
+                    # Người chơi nhận sát thương và chỉ xóa enemy thường
+                    nguoi_choi.nhan_sat_thuong(1)
+                    if not hasattr(t, 'hp'):
+                        t.kill()
+                if nguoi_choi.hp <= 0:
+                    menu_tro_choi.state = "gameover"
 
         # Vẽ
         man_hinh.fill((30, 30, 30))
         tat_ca_sprite.draw(man_hinh)
         ve_ui(man_hinh, nguoi_choi, phong_chu)
+
+            # Cập nhật thời gian chơi và spawn boss ở phút thứ 5 (300s)
+            elapsed_time += dt
+            if (not boss_spawned) and elapsed_time >= 300.0:
+                boss_spawned = True
+                # Sinh boss ở vị trí giữa trên cùng
+                vi_tri_boss = (RONG // 2, 80)
+                boss = Boss(vi_tri_boss, nguoi_choi, tat_ca_sprite, nhom_dan)
+                nhom_ke_thu.add(boss)
+                tat_ca_sprite.add(boss)
 
     elif menu_tro_choi.state == "gameover":
         menu_tro_choi.ve_thua_cuoc()
