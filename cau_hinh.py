@@ -15,18 +15,18 @@ SUC_CHUA_BANG_DAN = 10         # Sức chứa 1 băng
 DAN_DU_TRU_TOI_DA = 30         # Đạn dự trữ tối đa
 
 # Nạp đạn
-THOI_GIAN_NAP_DAN = 1.5        # giây
+THOI_GIAN_NAP_DAN = 1.8        # giây
 
 # Đạn
-TOC_DO_DAN = 600               # px/giây
-TOC_DO_DAN_KE_THU = 300
+TOC_DO_DAN = 300               # px/giây
+TOC_DO_DAN_KE_THU = 200
 
 # Kẻ thù
 TOC_DO_KE_THU = 80             # px/giây
 KHOANG_BAN_KE_THU_TOI_THIEU = 1.2
 KHOANG_BAN_KE_THU_TOI_DA = 3.0
 # Tỷ lệ scale mặc định cho sprite kẻ thù (1.0 = nguyên bản, <1 nhỏ hơn)
-ENEMY_SCALE = 0.6
+ENEMY_SCALE = 0.4
 
 # Alias giữ tương thích với mã hiện tại (tiếng Anh)
 WIDTH = RONG
