@@ -6,14 +6,14 @@ class NguoiChoi(pygame.sprite.Sprite):
     def __init__(self, vi_tri, nhom_tat_ca, nhom_dan):
         super().__init__()
 
-        # ===== HÀM HỖ TRỢ LOAD ẢNH =====
+        # ===== Hàm hỗ trợ load ảnh =====
         def load_img(name):
             path = os.path.join("assets", "nguoi_choi", name)
             img = pygame.image.load(path).convert_alpha()
             img = pygame.transform.smoothscale(img, (80, 100))
             return img
 
-        # ===== LOAD TOÀN BỘ ANIMATION =====
+        # ===== Load toàn bộ animation =====
         self.animations = {
             'Đứng Yên': [load_img('dungyen.png')],
             'Chạy': [load_img(f'chay{i}.png') for i in range(1, 9)],
@@ -24,24 +24,22 @@ class NguoiChoi(pygame.sprite.Sprite):
             'Nhào Lộn': [load_img(f'nhaolon{i}.png') for i in range(1, 8)]
         }
 
-        # ===== TRẠNG THÁI KHỞI TẠO =====
+        # ===== Trạng thái khởi tạo =====
         self.state = 'Đứng Yên'
         self.frame_index = 0
         self.image = self.animations[self.state][self.frame_index]
         self.rect = self.image.get_rect(center=vi_tri)
 
-        # ===== NHÓM SPRITE =====
+        # ===== Nhóm sprite =====
         self.all_sprites = nhom_tat_ca
         self.bullets_group = nhom_dan
 
-        # ===== HƯỚNG NHÌN =====
+        # ===== Hướng nhìn =====
         self.huong_phai = True
 
-        # ===== CHỈ SỐ NHÂN VẬT =====
+        # ===== Chỉ số nhân vật =====
         self.max_hp = PLAYER_MAX_HP
         self.hp = self.max_hp
-
-        # --- Hệ thống đạn ---
         self.magazine = PLAYER_MAGAZINE
         self.magazine_size = PLAYER_MAGAZINE
         self.reserve = PLAYER_RESERVE_MAX
@@ -49,31 +47,31 @@ class NguoiChoi(pygame.sprite.Sprite):
         self.reload_time = RELOAD_TIME
         self._reload_timer = 0.0
 
-        # --- Di chuyển ---
+        # ===== Di chuyển =====
         self.speed = PLAYER_SPEED
-        self.roll_speed = PLAYER_SPEED * 2.5  # tốc độ khi nhào lộn
+        self.roll_speed = PLAYER_SPEED * 1.5
 
-        # --- Điều khiển animation ---
+        # ===== Điều khiển animation =====
         self.anim_speeds = {
             'Đứng Yên': 0.08,
             'Chạy': 0.12,
-            'Bắn': 0.3,
+            'Bắn': 0.18,
             'Chết': 0.10,
-            'Trúng Đạn': 0.3,
+            'Trúng Đạn': 0.05,  # 👈 animation trúng đạn chậm lại
             'Thay Đạn': 0.07,
-            'Nhào Lộn': 0.10
+            'Nhào Lộn': 0.15
         }
 
-        # Trạng thái đặc biệt
+        # ===== Trạng thái đặc biệt =====
         self.is_rolling = False
         self.roll_direction = pygame.Vector2(0, 0)
-        self.roll_duration = 0.6  # thời gian nhào lộn
+        self.roll_duration = 0.35
         self.roll_timer = 0.0
 
-    # ===== CẬP NHẬT ANIMATION =====
-    def update_animation(self):
+    # ===== Cập nhật animation =====
+    def update_animation(self, dt=1/60):
         speed = self.anim_speeds.get(self.state, 0.1)
-        self.frame_index += speed
+        self.frame_index += speed * dt * 60
         frames = self.animations[self.state]
 
         if self.frame_index >= len(frames):
@@ -90,7 +88,6 @@ class NguoiChoi(pygame.sprite.Sprite):
             else:
                 self.frame_index = 0
 
-        # Giữ vị trí ổn định
         pos = self.rect.center
         img = frames[int(self.frame_index)]
         if not self.huong_phai:
@@ -98,14 +95,14 @@ class NguoiChoi(pygame.sprite.Sprite):
         self.image = img
         self.rect = self.image.get_rect(center=pos)
 
-    # ===== CẬP NHẬT & DI CHUYỂN =====
+    # ===== Cập nhật di chuyển =====
     def cap_nhat(self, dt, phim):
-        self.update_animation()
+        self.update_animation(dt)
 
         if self.state == 'Chết':
             return
 
-        # ----- Nếu đang nhào lộn -----
+        # Nếu đang nhào lộn
         if self.is_rolling:
             self.roll_timer += dt
             self.rect.x += self.roll_direction.x * self.roll_speed * dt
@@ -116,7 +113,7 @@ class NguoiChoi(pygame.sprite.Sprite):
             self.rect.clamp_ip(pygame.display.get_surface().get_rect())
             return
 
-        # ----- Di chuyển bình thường -----
+        # Di chuyển bình thường
         van_toc = pygame.Vector2(0, 0)
         if phim[pygame.K_w] or phim[pygame.K_UP]:
             van_toc.y = -1
@@ -129,53 +126,52 @@ class NguoiChoi(pygame.sprite.Sprite):
             van_toc.x = 1
             self.huong_phai = True
 
-        # ✅ Cho phép di chuyển khi đang thay đạn hoặc trúng đạn
+        # Cho phép di chuyển khi thay đạn hoặc trúng đạn
         if van_toc.length() > 0:
             van_toc = van_toc.normalize()
-            if not self.is_rolling:
-                self.state = 'Chạy'
-        elif not self.reloading and not self.is_rolling:
-            self.state = 'Đứng Yên'
+            if not self.is_rolling and self.state != 'Chết':
+                if not self.reloading:
+                    self.state = 'Chạy'
+        else:
+            if not self.is_rolling and not self.reloading:
+                self.state = 'Đứng Yên'
 
         self.rect.x += van_toc.x * self.speed * dt
         self.rect.y += van_toc.y * self.speed * dt
         self.rect.clamp_ip(pygame.display.get_surface().get_rect())
 
-        # Xử lý nạp đạn
+        # Nạp đạn
         if self.reloading:
             self._reload_timer += dt
             if self._reload_timer >= self.reload_time:
                 self._hoan_tat_nap()
 
-        # ✅ Phím nhào lộn (Shift)
+        # Nhào lộn
         if phim[pygame.K_LSHIFT]:
             huong = van_toc if van_toc.length() > 0 else pygame.Vector2(1 if self.huong_phai else -1, 0)
             self.bat_dau_nhao_lon(huong)
 
-    # ===== BẮN =====
+    # ===== Bắn =====
     def co_the_ban(self):
         return (not self.reloading) and self.magazine > 0 and not self.is_rolling and self.hp > 0
 
     def ban_vao_chuot(self):
         if not self.co_the_ban():
             return None
-
         mx, my = pygame.mouse.get_pos()
         dx, dy = mx - self.rect.centerx, my - self.rect.centery
         vec = pygame.Vector2(dx, dy)
         if vec.length() == 0:
             vec = pygame.Vector2(1, 0)
-
         vien_dan = Bullet(self.rect.center, vec, owner='player')
         self.all_sprites.add(vien_dan)
         self.bullets_group.add(vien_dan)
         self.magazine -= 1
-
         self.state = 'Bắn'
         self.frame_index = 0
         return vien_dan
 
-    # ===== NẠP ĐẠN =====
+    # ===== Nạp đạn =====
     def bat_dau_nap(self):
         if self.reloading or self.magazine >= self.magazine_size or self.reserve <= 0:
             return False
@@ -194,7 +190,7 @@ class NguoiChoi(pygame.sprite.Sprite):
         self.frame_index = 0
         self.state = 'Đứng Yên'
 
-    # ===== TRÚNG ĐẠN =====
+    # ===== Trúng đạn =====
     def nhan_sat_thuong(self, so_luong=1):
         if self.hp <= 0:
             return
@@ -206,7 +202,7 @@ class NguoiChoi(pygame.sprite.Sprite):
         if self.hp == 0:
             self.state = 'Chết'
 
-    # ===== NHÀO LỘN =====
+    # ===== Nhào lộn =====
     def bat_dau_nhao_lon(self, huong: pygame.Vector2):
         if self.is_rolling or self.state == 'Chết':
             return
@@ -218,7 +214,7 @@ class NguoiChoi(pygame.sprite.Sprite):
         self.frame_index = 0
         self.roll_timer = 0.0
 
-    # ===== ALIAS =====
+    # ===== Aliases =====
     update = cap_nhat
     can_shoot = co_the_ban
     shoot_at_mouse = ban_vao_chuot
@@ -227,5 +223,4 @@ class NguoiChoi(pygame.sprite.Sprite):
     take_damage = nhan_sat_thuong
     start_roll = bat_dau_nhao_lon
 
-# Alias tên lớp cũ
 Player = NguoiChoi

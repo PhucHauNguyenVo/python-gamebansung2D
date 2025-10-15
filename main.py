@@ -107,7 +107,7 @@ while dang_chay:
                         pass
 
         # Va chạm: đạn người chơi -> kẻ thù, đạn kẻ thù -> người chơi
-        for vien_dan in list(nhom_dan):
+        for vien_dan in list(nhom_dan): 
             owner = getattr(vien_dan, 'chu_so_huu', None)
             # Đạn của người chơi
             if owner == 'player':
