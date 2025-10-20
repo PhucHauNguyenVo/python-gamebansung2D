@@ -77,7 +77,7 @@ while dang_chay:
         dem_sinh_ke += dt
         if dem_sinh_ke >= KHOANG_SINH_KE_THU:
             dem_sinh_ke = 0.0
-            # spawn just outside screen so enemies travel into the visible area
+            # spawn just outside screen so enemies travel into the visible aread
             margin = 30
             side = random.choice(['left', 'right', 'top', 'bottom'])
             if side == 'left':

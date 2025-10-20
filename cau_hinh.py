@@ -15,7 +15,7 @@ SUC_CHUA_BANG_DAN = 10         # Sức chứa 1 băng
 DAN_DU_TRU_TOI_DA = 30         # Đạn dự trữ tối đa
 
 # Nạp đạn
-THOI_GIAN_NAP_DAN = 1.8        # giây
+THOI_GIAN_NAP_DAN = 0.9        # giây
 
 # Đạn
 TOC_DO_DAN = 300               # px/giây
